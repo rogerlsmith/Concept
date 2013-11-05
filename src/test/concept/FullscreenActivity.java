@@ -1,6 +1,7 @@
 package test.concept;
 
 import test.concept.util.SystemUiHider;
+import test.concept.PhotoHandler;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -46,6 +47,8 @@ public class FullscreenActivity extends Activity {
 	 * The instance of the {@link SystemUiHider} for this activity.
 	 */
 	private SystemUiHider mSystemUiHider;
+	
+	private Camera camera;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -55,8 +58,7 @@ public class FullscreenActivity extends Activity {
 				
 		int n = Camera.getNumberOfCameras();
 		if (n > 0) {
-			Camera camera = Camera.open(n-1);
-			camera.release();
+			camera = Camera.open(n-1);
 		}
 
 		final View controlsView = findViewById(R.id.fullscreen_content_controls);
@@ -144,6 +146,9 @@ public class FullscreenActivity extends Activity {
 	View.OnTouchListener mDelayHideTouchListener = new View.OnTouchListener() {
 		@Override
 		public boolean onTouch(View view, MotionEvent motionEvent) {
+			camera.takePicture(null, null,
+			        new PhotoHandler(getApplicationContext()));
+			
 			if (AUTO_HIDE) {
 				delayedHide(AUTO_HIDE_DELAY_MILLIS);
 			}
