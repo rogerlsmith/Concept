@@ -171,6 +171,10 @@ public class FullscreenActivity extends Activity {
 	private void delayedHide(int delayMillis) {
 		mHideHandler.removeCallbacks(mHideRunnable);
 		mHideHandler.postDelayed(mHideRunnable, delayMillis);
+		if (camera != null) {
+			camera.release();
+			camera = null;
+		}
 	}
 }
 
