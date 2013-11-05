@@ -10,6 +10,8 @@ import android.os.Handler;
 import android.view.MotionEvent;
 import android.view.View;
 
+import android.hardware.Camera;
+
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
@@ -50,6 +52,12 @@ public class FullscreenActivity extends Activity {
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.activity_fullscreen);
+				
+		int n = Camera.getNumberOfCameras();
+		if (n > 0) {
+			Camera camera = Camera.open(n-1);
+			camera.release();
+		}
 
 		final View controlsView = findViewById(R.id.fullscreen_content_controls);
 		final View contentView = findViewById(R.id.fullscreen_content);
@@ -160,3 +168,4 @@ public class FullscreenActivity extends Activity {
 		mHideHandler.postDelayed(mHideRunnable, delayMillis);
 	}
 }
+
