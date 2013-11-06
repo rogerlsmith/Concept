@@ -1,7 +1,10 @@
 package test.concept;
 
+import java.io.IOException;
+
 import test.concept.util.SystemUiHider;
 import test.concept.PhotoHandler;
+import test.concept.GlRenderer;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -10,6 +13,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.SurfaceHolder;
+import android.opengl.GLSurfaceView;
+
 
 import android.hardware.Camera;
 
@@ -49,6 +55,8 @@ public class FullscreenActivity extends Activity {
 	private SystemUiHider mSystemUiHider;
 	
 	private Camera camera;
+	private GLSurfaceView surfaceView;
+	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +68,11 @@ public class FullscreenActivity extends Activity {
 		if (n > 0) {
 			camera = Camera.open(n-1);
 		}
-
+		
+	    surfaceView = new GLSurfaceView(this);
+	    surfaceView.setRenderer(new GlRenderer());
+	    setContentView(surfaceView);
+	    
 		final View controlsView = findViewById(R.id.fullscreen_content_controls);
 		final View contentView = findViewById(R.id.fullscreen_content);
 
@@ -146,8 +158,21 @@ public class FullscreenActivity extends Activity {
 	View.OnTouchListener mDelayHideTouchListener = new View.OnTouchListener() {
 		@Override
 		public boolean onTouch(View view, MotionEvent motionEvent) {
-			camera.takePicture(null, null,
-			        new PhotoHandler(getApplicationContext()));
+			if (camera != null) {
+
+			    SurfaceHolder surfaceHolder = surfaceView.getHolder();
+			    
+				try {
+					camera.setPreviewDisplay(surfaceHolder);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				
+				camera.startPreview();
+				
+				camera.takePicture(null, null,
+				        new PhotoHandler(getApplicationContext()));
+			}
 			
 			if (AUTO_HIDE) {
 				delayedHide(AUTO_HIDE_DELAY_MILLIS);
@@ -171,10 +196,6 @@ public class FullscreenActivity extends Activity {
 	private void delayedHide(int delayMillis) {
 		mHideHandler.removeCallbacks(mHideRunnable);
 		mHideHandler.postDelayed(mHideRunnable, delayMillis);
-		if (camera != null) {
-			camera.release();
-			camera = null;
-		}
 	}
 }
 
