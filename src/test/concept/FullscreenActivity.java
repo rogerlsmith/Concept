@@ -1,201 +1,221 @@
 package test.concept;
 
-import java.io.IOException;
 
-import test.concept.util.SystemUiHider;
-import test.concept.PhotoHandler;
-import test.concept.GlRenderer;
-
-import android.annotation.TargetApi;
+import java.io.File;
+import java.io.FileOutputStream;
 import android.app.Activity;
+import android.graphics.ImageFormat;
+import android.hardware.Camera;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.view.MotionEvent;
-import android.view.View;
+import android.os.Environment;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.SurfaceHolder;
-import android.opengl.GLSurfaceView;
+import android.view.SurfaceView;
+import android.widget.Toast;
 
-
-import android.hardware.Camera;
-
-/**
- * An example full-screen activity that shows and hides the system UI (i.e.
- * status bar and navigation/system bar) with user interaction.
- * 
- * @see SystemUiHider
- */
 public class FullscreenActivity extends Activity {
-	/**
-	 * Whether or not the system UI should be auto-hidden after
-	 * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
-	 */
-	private static final boolean AUTO_HIDE = true;
+  private SurfaceView preview=null;
+  private SurfaceHolder previewHolder=null;
+  private Camera camera=null;
+  private boolean inPreview=false;
+  private boolean cameraConfigured=false;
 
-	/**
-	 * If {@link #AUTO_HIDE} is set, the number of milliseconds to wait after
-	 * user interaction before hiding the system UI.
-	 */
-	private static final int AUTO_HIDE_DELAY_MILLIS = 3000;
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.main);
 
-	/**
-	 * If set, will toggle the system UI visibility upon interaction. Otherwise,
-	 * will show the system UI visibility upon interaction.
-	 */
-	private static final boolean TOGGLE_ON_CLICK = true;
+    preview=(SurfaceView)findViewById(R.id.preview);
+    previewHolder=preview.getHolder();
+    previewHolder.addCallback(surfaceCallback);
+    previewHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+  }
 
-	/**
-	 * The flags to pass to {@link SystemUiHider#getInstance}.
-	 */
-	private static final int HIDER_FLAGS = SystemUiHider.FLAG_HIDE_NAVIGATION;
+  @Override
+  public void onResume() {
+    super.onResume();
 
-	/**
-	 * The instance of the {@link SystemUiHider} for this activity.
-	 */
-	private SystemUiHider mSystemUiHider;
-	
-	private Camera camera;
-	private GLSurfaceView surfaceView;
-	
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+      Camera.CameraInfo info=new Camera.CameraInfo();
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+      for (int i=0; i < Camera.getNumberOfCameras(); i++) {
+        Camera.getCameraInfo(i, info);
 
-		setContentView(R.layout.activity_fullscreen);
-				
-		int n = Camera.getNumberOfCameras();
-		if (n > 0) {
-			camera = Camera.open(n-1);
-		}
-		
-	    surfaceView = new GLSurfaceView(this);
-	    surfaceView.setRenderer(new GlRenderer());
-	    setContentView(surfaceView);
-	    
-		final View controlsView = findViewById(R.id.fullscreen_content_controls);
-		final View contentView = findViewById(R.id.fullscreen_content);
+        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+          camera=Camera.open(i);
+        }
+      }
+    }
 
-		// Set up an instance of SystemUiHider to control the system UI for
-		// this activity.
-		mSystemUiHider = SystemUiHider.getInstance(this, contentView,
-				HIDER_FLAGS);
-		mSystemUiHider.setup();
-		mSystemUiHider
-				.setOnVisibilityChangeListener(new SystemUiHider.OnVisibilityChangeListener() {
-					// Cached values.
-					int mControlsHeight;
-					int mShortAnimTime;
+    if (camera == null) {
+      camera=Camera.open();
+    }
 
-					@Override
-					@TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-					public void onVisibilityChange(boolean visible) {
-						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-							// If the ViewPropertyAnimator API is available
-							// (Honeycomb MR2 and later), use it to animate the
-							// in-layout UI controls at the bottom of the
-							// screen.
-							if (mControlsHeight == 0) {
-								mControlsHeight = controlsView.getHeight();
-							}
-							if (mShortAnimTime == 0) {
-								mShortAnimTime = getResources().getInteger(
-										android.R.integer.config_shortAnimTime);
-							}
-							controlsView
-									.animate()
-									.translationY(visible ? 0 : mControlsHeight)
-									.setDuration(mShortAnimTime);
-						} else {
-							// If the ViewPropertyAnimator APIs aren't
-							// available, simply show or hide the in-layout UI
-							// controls.
-							controlsView.setVisibility(visible ? View.VISIBLE
-									: View.GONE);
-						}
+    startPreview();
+  }
 
-						if (visible && AUTO_HIDE) {
-							// Schedule a hide().
-							delayedHide(AUTO_HIDE_DELAY_MILLIS);
-						}
-					}
-				});
+  @Override
+  public void onPause() {
+    if (inPreview) {
+      camera.stopPreview();
+    }
 
-		// Set up the user interaction to manually show or hide the system UI.
-		contentView.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				if (TOGGLE_ON_CLICK) {
-					mSystemUiHider.toggle();
-				} else {
-					mSystemUiHider.show();
-				}
-			}
-		});
+    camera.release();
+    camera=null;
+    inPreview=false;
 
-		// Upon interacting with UI controls, delay any scheduled hide()
-		// operations to prevent the jarring behavior of controls going away
-		// while interacting with the UI.
-		findViewById(R.id.dummy_button).setOnTouchListener(
-				mDelayHideTouchListener);
-	}
+    super.onPause();
+  }
 
-	@Override
-	protected void onPostCreate(Bundle savedInstanceState) {
-		super.onPostCreate(savedInstanceState);
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+//rls    new MenuInflater(this).inflate(R.menu.options, menu);
 
-		// Trigger the initial hide() shortly after the activity has been
-		// created, to briefly hint to the user that UI controls
-		// are available.
-		delayedHide(100);
-	}
+    return(super.onCreateOptionsMenu(menu));
+  }
 
-	/**
-	 * Touch listener to use for in-layout UI controls to delay hiding the
-	 * system UI. This is to prevent the jarring behavior of controls going away
-	 * while interacting with activity UI.
-	 */
-	View.OnTouchListener mDelayHideTouchListener = new View.OnTouchListener() {
-		@Override
-		public boolean onTouch(View view, MotionEvent motionEvent) {
-			if (camera != null) {
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+    if (item.getItemId() == R.id.camera) {
+      if (inPreview) {
+        camera.takePicture(null, null, photoCallback);
+        inPreview=false;
+      }
+    }
 
-			    SurfaceHolder surfaceHolder = surfaceView.getHolder();
-			    
-				try {
-					camera.setPreviewDisplay(surfaceHolder);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				
-				camera.startPreview();
-				
-				camera.takePicture(null, null,
-				        new PhotoHandler(getApplicationContext()));
-			}
-			
-			if (AUTO_HIDE) {
-				delayedHide(AUTO_HIDE_DELAY_MILLIS);
-			}
-			return false;
-		}
-	};
+    return(super.onOptionsItemSelected(item));
+  }
 
-	Handler mHideHandler = new Handler();
-	Runnable mHideRunnable = new Runnable() {
-		@Override
-		public void run() {
-			mSystemUiHider.hide();
-		}
-	};
+  private Camera.Size getBestPreviewSize(int width, int height,
+                                         Camera.Parameters parameters) {
+    Camera.Size result=null;
 
-	/**
-	 * Schedules a call to hide() in [delay] milliseconds, canceling any
-	 * previously scheduled calls.
-	 */
-	private void delayedHide(int delayMillis) {
-		mHideHandler.removeCallbacks(mHideRunnable);
-		mHideHandler.postDelayed(mHideRunnable, delayMillis);
-	}
+    for (Camera.Size size : parameters.getSupportedPreviewSizes()) {
+      if (size.width <= width && size.height <= height) {
+        if (result == null) {
+          result=size;
+        }
+        else {
+          int resultArea=result.width * result.height;
+          int newArea=size.width * size.height;
+
+          if (newArea > resultArea) {
+            result=size;
+          }
+        }
+      }
+    }
+
+    return(result);
+  }
+
+  private Camera.Size getSmallestPictureSize(Camera.Parameters parameters) {
+    Camera.Size result=null;
+
+    for (Camera.Size size : parameters.getSupportedPictureSizes()) {
+      if (result == null) {
+        result=size;
+      }
+      else {
+        int resultArea=result.width * result.height;
+        int newArea=size.width * size.height;
+
+        if (newArea < resultArea) {
+          result=size;
+        }
+      }
+    }
+
+    return(result);
+  }
+
+  private void initPreview(int width, int height) {
+    if (camera != null && previewHolder.getSurface() != null) {
+      try {
+        camera.setPreviewDisplay(previewHolder);
+      }
+      catch (Throwable t) {
+        Log.e("PreviewDemo-surfaceCallback",
+              "Exception in setPreviewDisplay()", t);
+        Toast.makeText(FullscreenActivity.this, t.getMessage(),
+                       Toast.LENGTH_LONG).show();
+      }
+
+      if (!cameraConfigured) {
+        Camera.Parameters parameters=camera.getParameters();
+        Camera.Size size=getBestPreviewSize(width, height, parameters);
+        Camera.Size pictureSize=getSmallestPictureSize(parameters);
+
+        if (size != null && pictureSize != null) {
+          parameters.setPreviewSize(size.width, size.height);
+          parameters.setPictureSize(pictureSize.width,
+                                    pictureSize.height);
+          parameters.setPictureFormat(ImageFormat.JPEG);
+          camera.setParameters(parameters);
+          cameraConfigured=true;
+        }
+      }
+    }
+  }
+
+  private void startPreview() {
+    if (cameraConfigured && camera != null) {
+      camera.startPreview();
+      inPreview=true;
+    }
+  }
+
+  SurfaceHolder.Callback surfaceCallback=new SurfaceHolder.Callback() {
+    public void surfaceCreated(SurfaceHolder holder) {
+      // no-op -- wait until surfaceChanged()
+    }
+
+    public void surfaceChanged(SurfaceHolder holder, int format,
+                               int width, int height) {
+      initPreview(width, height);
+      startPreview();
+    }
+
+    public void surfaceDestroyed(SurfaceHolder holder) {
+      // no-op
+    }
+  };
+
+  Camera.PictureCallback photoCallback=new Camera.PictureCallback() {
+    public void onPictureTaken(byte[] data, Camera camera) {
+      new SavePhotoTask().execute(data);
+      camera.startPreview();
+      inPreview=true;
+    }
+  };
+
+  class SavePhotoTask extends AsyncTask<byte[], String, String> {
+    @Override
+    protected String doInBackground(byte[]... jpeg) {
+      File photo=
+          new File(Environment.getExternalStorageDirectory(),
+                   "photo.jpg");
+
+      if (photo.exists()) {
+        photo.delete();
+      }
+
+      try {
+        FileOutputStream fos=new FileOutputStream(photo.getPath());
+
+        fos.write(jpeg[0]);
+        fos.close();
+      }
+      catch (java.io.IOException e) {
+        Log.e("PictureDemo", "Exception in photoCallback", e);
+      }
+
+      return(null);
+    }
+  }
 }
-
