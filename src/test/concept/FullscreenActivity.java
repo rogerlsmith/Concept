@@ -74,7 +74,7 @@ public class FullscreenActivity extends Activity {
 
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
-//rls    new MenuInflater(this).inflate(R.menu.options, menu);
+    new MenuInflater(this).inflate(R.menu.options, menu);
 
     return(super.onCreateOptionsMenu(menu));
   }
@@ -212,7 +212,7 @@ public class FullscreenActivity extends Activity {
         fos.close();
       }
       catch (java.io.IOException e) {
-        Log.e("PictureDemo", "Exception in photoCallback", e);
+        Log.e("Concept", "Exception in photoCallback", e);
       }
 
       return(null);
