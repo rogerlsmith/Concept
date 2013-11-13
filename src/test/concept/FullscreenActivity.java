@@ -3,6 +3,8 @@ package test.concept;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
+
 import android.app.Activity;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
@@ -17,6 +19,12 @@ import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Toast;
+
+import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class FullscreenActivity extends Activity {
   private SurfaceView preview=null;
@@ -46,7 +54,7 @@ public class FullscreenActivity extends Activity {
       for (int i=0; i < Camera.getNumberOfCameras(); i++) {
         Camera.getCameraInfo(i, info);
 
-        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+        if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
           camera=Camera.open(i);
         }
       }
@@ -55,7 +63,6 @@ public class FullscreenActivity extends Activity {
     if (camera == null) {
       camera=Camera.open();
     }
-
     startPreview();
   }
 
@@ -188,6 +195,7 @@ public class FullscreenActivity extends Activity {
 
   Camera.PictureCallback photoCallback=new Camera.PictureCallback() {
     public void onPictureTaken(byte[] data, Camera camera) {
+      Log.v("Concept", "Picture Taken!");
       new SavePhotoTask().execute(data);
       camera.startPreview();
       inPreview=true;
@@ -199,17 +207,83 @@ public class FullscreenActivity extends Activity {
     protected String doInBackground(byte[]... jpeg) {
       File photo=
           new File(Environment.getExternalStorageDirectory(),
-                   "photo.jpg");
+                   "photo.jpg");									// /mnt/SDCard/photo.jpg
 
       if (photo.exists()) {
         photo.delete();
       }
 
       try {
+    	Log.v("Concept", "File Output Stream");
         FileOutputStream fos=new FileOutputStream(photo.getPath());
-
+        Log.v("Concept", "Write File");
         fos.write(jpeg[0]);
+        Log.v("Concept", "Close File");
         fos.close();
+        
+        
+        /**********  File Path *************/
+        final String uploadFilePath = "/mnt/sdcard/";
+        final String uploadFileName = "photo.jpg";
+        String sourceFileUri = uploadFilePath + uploadFileName;
+        String fileName = sourceFileUri;
+        
+        HttpURLConnection conn = null;
+        DataOutputStream dos = null;  
+        String lineEnd = "\r\n";
+        String twoHyphens = "--";
+        String boundary = "*****";
+        int bytesRead, bytesAvailable, bufferSize;
+        int serverResponseCode = 0;
+        byte[] buffer;
+        int maxBufferSize = 1 * 1024 * 1024; 
+        
+        FileInputStream fileInputStream = new FileInputStream(fileName);
+        URL url = new URL("http://172.16.20.111/app.php");
+        
+        conn = (HttpURLConnection) url.openConnection(); 
+        conn.setDoInput(true); // Allow Inputs
+        conn.setDoOutput(true); // Allow Outputs
+        conn.setUseCaches(false); // Don't use a Cached Copy
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Connection", "Keep-Alive");
+        conn.setRequestProperty("ENCTYPE", "multipart/form-data");
+        conn.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
+        conn.setRequestProperty("uploaded_file", fileName);
+ 
+        dos = new DataOutputStream(conn.getOutputStream());        
+        dos.writeBytes(twoHyphens + boundary + lineEnd); 
+        dos.writeBytes("Content-Disposition: form-data; name='uploaded_file';filename='" + fileName + "'" + lineEnd);
+        dos.writeBytes(lineEnd);
+        
+        bytesAvailable = fileInputStream.available(); 
+        
+        bufferSize = Math.min(bytesAvailable, maxBufferSize);
+        buffer = new byte[bufferSize];
+        
+        bytesRead = fileInputStream.read(buffer, 0, bufferSize);  
+        
+        while (bytesRead > 0) {
+             
+          dos.write(buffer, 0, bufferSize);
+          bytesAvailable = fileInputStream.available();
+          bufferSize = Math.min(bytesAvailable, maxBufferSize);
+          bytesRead = fileInputStream.read(buffer, 0, bufferSize);   
+           
+        }
+
+        // send multipart form data necessary after file data...
+        dos.writeBytes(lineEnd);
+        dos.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+        
+        serverResponseCode = conn.getResponseCode();
+        String serverResponseMessage = conn.getResponseMessage();
+       
+        //close the streams //
+        fileInputStream.close();
+        dos.flush();
+        dos.close();
+        
       }
       catch (java.io.IOException e) {
         Log.e("Concept", "Exception in photoCallback", e);
