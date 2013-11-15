@@ -19,6 +19,10 @@ import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Toast;
+import android.view.View;
+import android.view.View.OnKeyListener;
+import android.widget.EditText;
+import android.view.KeyEvent;
 
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
@@ -32,6 +36,7 @@ public class FullscreenActivity extends Activity {
   private Camera camera=null;
   private boolean inPreview=false;
   private boolean cameraConfigured=false;
+  private EditText edittext;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -42,6 +47,8 @@ public class FullscreenActivity extends Activity {
     previewHolder=preview.getHolder();
     previewHolder.addCallback(surfaceCallback);
     previewHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+
+    addKeyListener();
   }
 
   @Override
@@ -214,6 +221,8 @@ public class FullscreenActivity extends Activity {
       }
 
       try {
+    	edittext = (EditText) findViewById(R.id.editTeam);
+    	Log.v("Concept", edittext.getText().toString());
     	Log.v("Concept", "File Output Stream");
         FileOutputStream fos=new FileOutputStream(photo.getPath());
         Log.v("Concept", "Write File");
@@ -250,6 +259,7 @@ public class FullscreenActivity extends Activity {
         conn.setRequestProperty("ENCTYPE", "multipart/form-data");
         conn.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
         conn.setRequestProperty("uploaded_file", fileName);
+//        conn.setRequestProperty("team_number", edittext.getText().toString());
  
         dos = new DataOutputStream(conn.getOutputStream());        
         dos.writeBytes(twoHyphens + boundary + lineEnd); 
@@ -292,4 +302,39 @@ public class FullscreenActivity extends Activity {
       return(null);
     }
   }
+  
+  
+  public void addKeyListener() {
+	  
+		// get editteam component
+		edittext = (EditText) findViewById(R.id.editTeam);
+	 
+		if (edittext != null) {
+			// add a keylistener to keep track user input
+			edittext.setOnKeyListener(new OnKeyListener() {
+				public boolean onKey(View v, int keyCode, KeyEvent event) {
+		 
+					// if keydown and "enter" is pressed
+					if ((event.getAction() == KeyEvent.ACTION_DOWN)
+						&& (keyCode == KeyEvent.KEYCODE_ENTER)) {
+			 
+						// display a floating message
+						Toast.makeText(FullscreenActivity.this,
+							edittext.getText(), Toast.LENGTH_LONG).show();
+						return true;
+			 
+					} else if ((event.getAction() == KeyEvent.ACTION_DOWN)
+						&& (keyCode == KeyEvent.KEYCODE_9)) {
+			 
+						// display a floating message
+						Toast.makeText(FullscreenActivity.this,
+							"Number 9 is pressed!", Toast.LENGTH_LONG).show();
+						return true;
+					}
+			 
+					return false;
+				}
+			});
+		}
+	}
 }
