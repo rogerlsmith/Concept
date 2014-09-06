@@ -3,32 +3,44 @@ package test.concept;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.OutputStream;
 
 import android.app.Activity;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
+import android.content.Context;
+
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+
 import android.util.Log;
+
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.widget.Toast;
 import android.view.View;
 import android.view.View.OnKeyListener;
-import android.widget.EditText;
+import android.view.ViewGroup;
 import android.view.KeyEvent;
+
+import android.widget.Toast;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
+
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
+
+import android.media.MediaRecorder;
+import android.media.MediaPlayer;
+
+import java.io.IOException;
 
 public class FullscreenActivity extends Activity {
   private SurfaceView preview=null;
@@ -37,7 +49,157 @@ public class FullscreenActivity extends Activity {
   private boolean inPreview=false;
   private boolean cameraConfigured=false;
   private EditText edittext;
+  
+  private static final String LOG_TAG = "AudioRecordTest";
+  private static String mFileName = null;
 
+  private RecordButton mRecordButton = null;
+  private MediaRecorder mRecorder = null;
+
+  private PlayButton   mPlayButton = null;
+  private MediaPlayer   mPlayer = null;
+  
+  
+  
+  
+  private void onRecord(boolean start) {
+      if (start) {
+          startRecording();
+      } else {
+          stopRecording();
+      }
+  }
+
+  private void onPlay(boolean start) {
+      if (start) {
+          startPlaying();
+      } else {
+          stopPlaying();
+      }
+  }
+
+  private void startPlaying() {
+      mPlayer = new MediaPlayer();
+      try {
+          mPlayer.setDataSource(mFileName);
+          mPlayer.prepare();
+          mPlayer.start();
+      } catch (IOException e) {
+          Log.e(LOG_TAG, "prepare() failed");
+      }
+  }
+
+  private void stopPlaying() {
+      mPlayer.release();
+      mPlayer = null;
+  }
+
+  private void startRecording() {
+      mRecorder = new MediaRecorder();
+      mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+      mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+      mRecorder.setOutputFile(mFileName);
+      mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+
+      try {
+          mRecorder.prepare();
+      } catch (IOException e) {
+          Log.e(LOG_TAG, "prepare() failed");
+      }
+
+      mRecorder.start();
+  }
+
+  private void stopRecording() {
+      mRecorder.stop();
+      mRecorder.release();
+      mRecorder = null;
+  }
+
+  class RecordButton extends Button {
+      boolean mStartRecording = true;
+
+      OnClickListener clicker = new OnClickListener() {
+          public void onClick(View v) {
+              onRecord(mStartRecording);
+              if (mStartRecording) {
+                  setText("Stop recording");
+              } else {
+                  setText("Start recording");
+              }
+              mStartRecording = !mStartRecording;
+          }
+      };
+
+      public RecordButton(Context ctx) {
+          super(ctx);
+          setText("Start recording");
+          setOnClickListener(clicker);
+      }
+  }
+
+  class PlayButton extends Button {
+      boolean mStartPlaying = true;
+
+      OnClickListener clicker = new OnClickListener() {
+          public void onClick(View v) {
+              onPlay(mStartPlaying);
+              if (mStartPlaying) {
+                  setText("Stop playing");
+              } else {
+                  setText("Start playing");
+              }
+              mStartPlaying = !mStartPlaying;
+          }
+      };
+
+      public PlayButton(Context ctx) {
+          super(ctx);
+          setText("Start playing");
+          setOnClickListener(clicker);
+      }
+  }
+  /* 
+  public AudioRecordTest() {
+      mFileName = Environment.getExternalStorageDirectory().getAbsolutePath();
+      mFileName += "/audiorecordtest.3gp";
+  }
+
+ 
+  @Override
+  public void onCreate(Bundle icicle) {
+      super.onCreate(icicle);
+
+      LinearLayout ll = new LinearLayout(this);
+      mRecordButton = new RecordButton(this);
+      ll.addView(mRecordButton,
+          new LinearLayout.LayoutParams(
+              ViewGroup.LayoutParams.WRAP_CONTENT,
+              ViewGroup.LayoutParams.WRAP_CONTENT,
+              0));
+      mPlayButton = new PlayButton(this);
+      ll.addView(mPlayButton,
+          new LinearLayout.LayoutParams(
+              ViewGroup.LayoutParams.WRAP_CONTENT,
+              ViewGroup.LayoutParams.WRAP_CONTENT,
+              0));
+      setContentView(ll);
+  }
+
+  @Override
+  public void onPause() {
+      super.onPause();
+      if (mRecorder != null) {
+          mRecorder.release();
+          mRecorder = null;
+      }
+
+      if (mPlayer != null) {
+          mPlayer.release();
+          mPlayer = null;
+      }
+  }
+*/
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -47,6 +209,21 @@ public class FullscreenActivity extends Activity {
     previewHolder=preview.getHolder();
     previewHolder.addCallback(surfaceCallback);
     previewHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+    
+    LinearLayout ll = new LinearLayout(this);
+    mRecordButton = new RecordButton(this);
+    ll.addView(mRecordButton,
+        new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            0));
+    mPlayButton = new PlayButton(this);
+    ll.addView(mPlayButton,
+        new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            0));
+    setContentView(ll);
 
     addKeyListener();
   }
@@ -82,6 +259,16 @@ public class FullscreenActivity extends Activity {
     camera.release();
     camera=null;
     inPreview=false;
+    
+    if (mRecorder != null) {
+        mRecorder.release();
+        mRecorder = null;
+    }
+
+    if (mPlayer != null) {
+        mPlayer.release();
+        mPlayer = null;
+    }
 
     super.onPause();
   }
