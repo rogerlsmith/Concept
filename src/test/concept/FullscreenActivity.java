@@ -170,6 +170,7 @@ public class FullscreenActivity extends Activity
     	  
           public void onClick ( View v ) 
           {
+        	  Log.v( "Concept", "Record button pressed" );
               onRecord ( mStartRecording );
               
               if ( mStartRecording ) 
@@ -208,6 +209,7 @@ public class FullscreenActivity extends Activity
     	  
           public void onClick ( View v )
           {
+        	  Log.v ( "Concept", "Play button pressed" );
               onPlay ( mStartPlaying );
               
               if ( mStartPlaying )
@@ -276,68 +278,100 @@ public class FullscreenActivity extends Activity
       }
   }
 */
+  
+  /*
+   * (non-Javadoc)
+   * @see android.app.Activity#onCreate(android.os.Bundle)
+   */
   @Override
-  public void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.main);
+  public void onCreate ( Bundle savedInstanceState )
+  {
+	  
+    super.onCreate ( savedInstanceState );
+    setContentView ( R.layout.main );
 
-    preview=(SurfaceView)findViewById(R.id.preview);
-    previewHolder=preview.getHolder();
+    preview = ( SurfaceView ) findViewById ( R.id.preview );
+    
+    previewHolder = preview.getHolder ( );
     previewHolder.addCallback(surfaceCallback);
     previewHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     
-    LinearLayout ll = new LinearLayout(this);
-    mRecordButton = new RecordButton(this);
+    LinearLayout ll = new LinearLayout ( this );
+    mRecordButton = new RecordButton ( this );
+    
     ll.addView(mRecordButton,
         new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             0));
+    
     mPlayButton = new PlayButton(this);
-    ll.addView(mPlayButton,
-        new LinearLayout.LayoutParams(
+    ll.addView ( mPlayButton,
+        new LinearLayout.LayoutParams (
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
-            0));
-    setContentView(ll);
+            0 ) );
+    
+    setContentView ( ll );
 
-    addKeyListener();
+    addKeyListener ( );
   }
 
+  
+  
+  /*
+   * (non-Javadoc)
+   * @see android.app.Activity#onResume()
+   */
   @Override
-  public void onResume() {
-    super.onResume();
+  public void onResume ( )
+  {
+    super.onResume ( );
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-      Camera.CameraInfo info=new Camera.CameraInfo();
+    if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD)
+    {
+      Camera.CameraInfo info = new Camera.CameraInfo ( );
 
-      for (int i=0; i < Camera.getNumberOfCameras(); i++) {
-        Camera.getCameraInfo(i, info);
+      for ( int i=0; i < Camera.getNumberOfCameras ( ); i++ )
+      {
+        Camera.getCameraInfo ( i, info );
 
-        if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
-          camera=Camera.open(i);
+        if ( info.facing == Camera.CameraInfo.CAMERA_FACING_BACK )
+        {
+          camera=Camera.open ( i );
         }
       }
     }
 
-    if (camera == null) {
-      camera=Camera.open();
+    if ( camera == null )
+    {
+      camera=Camera.open ( );
     }
-    startPreview();
+    
+    startPreview ( );
   }
 
+  
+  
+  /*
+   * (non-Javadoc)
+   * @see android.app.Activity#onPause()
+   */
   @Override
-  public void onPause() {
-    if (inPreview) {
-      camera.stopPreview();
+  public void onPause ( )
+  {
+    if ( inPreview ) 
+    {
+      camera.stopPreview ( );
     }
 
-    camera.release();
+    camera.release ( );
     camera=null;
     inPreview=false;
     
-    if (mRecorder != null) {
-        mRecorder.release();
+    if ( mRecorder != null )
+    {
+        mRecorder.release ( );
         mRecorder = null;
     }
 
@@ -505,7 +539,9 @@ public class FullscreenActivity extends Activity
         String lineEnd = "\r\n";
         String twoHyphens = "--";
         String boundary = "*****";
+        
         int bytesRead, bytesAvailable, bufferSize;
+        
         int serverResponseCode = 0;
         byte[] buffer;
         int maxBufferSize = 1 * 1024 * 1024; 
