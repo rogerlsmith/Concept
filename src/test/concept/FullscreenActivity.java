@@ -45,21 +45,24 @@ import java.io.IOException;
 public class FullscreenActivity extends Activity 
 {
 	
-  private SurfaceView 		preview			= null;
-  private SurfaceHolder 	previewHolder	= null;
-  private Camera 			camera			= null;
-  private boolean 			inPreview		= false;
-  private boolean 			cameraConfigured= false;
+  private SurfaceView 		preview				= null;
+  private SurfaceHolder 	previewHolder		= null;
+  private Camera 			camera				= null;
+  private boolean 			inPreview			= false;
+  private boolean 			cameraConfigured	= false;
   private EditText 			edittext;
   
   private static final String LOG_TAG = "AudioRecordTest";
-  private static String mFileName = null;
+  private static String 	mFileName			= null;
 
-  private RecordButton mRecordButton = null;
-  private MediaRecorder mRecorder = null;
+  private RecordButton 		mRecordButton		= null;
+  private MediaRecorder 	mRecorder 			= null;
 
-  private PlayButton   mPlayButton = null;
-  private MediaPlayer   mPlayer = null;
+  private PlayButton   		mPlayButton 		= null;
+  private MediaPlayer   	mPlayer 			= null;
+  
+  private PhotoButton   	mPhotoButton 		= null;
+  private DummyButton   	mDummyButton 		= null;
   
   
   
@@ -68,10 +71,13 @@ public class FullscreenActivity extends Activity
    */
   private void onRecord ( boolean start ) 
   {
-      if (start) {
-          startRecording();
-      } else {
-          stopRecording();
+      if ( start ) 
+      {
+          startRecording ( );
+      }
+      else
+      {
+          stopRecording ( );
       }
   }
 
@@ -168,6 +174,10 @@ public class FullscreenActivity extends Activity
       OnClickListener clicker = new OnClickListener ( )
       {
     	  
+    	  /*
+    	   * (non-Javadoc)
+    	   * @see android.view.View.OnClickListener#onClick(android.view.View)
+    	   */
           public void onClick ( View v ) 
           {
         	  Log.v( "Concept", "Record button pressed" );
@@ -187,7 +197,11 @@ public class FullscreenActivity extends Activity
           }
       };
 
-      public RecordButton(Context ctx)
+      
+      /*
+       * 
+       */
+      public RecordButton ( Context ctx )
       {
           super ( ctx );
           
@@ -197,6 +211,98 @@ public class FullscreenActivity extends Activity
   }
 
   
+  
+  /*
+   * create photo button
+   */
+  class PhotoButton extends Button 
+  {
+
+	  boolean mCameraOpen = true;
+	  
+      OnClickListener clicker = new OnClickListener ( )
+      {
+    	  
+    	  /*
+    	   * (non-Javadoc)
+    	   * @see android.view.View.OnClickListener#onClick(android.view.View)
+    	   */
+          public void onClick ( View v ) 
+          {
+        	  
+        	  Log.v( "Concept", "Record button pressed" );
+              onRecord ( mCameraOpen );
+              
+              if ( mCameraOpen ) 
+              {
+                  setText ( "Stop recording" );
+              } 
+              else 
+              {
+                  setText ( "Start recording" );
+              }
+              
+              mCameraOpen = !mCameraOpen;
+              
+          }
+      };
+
+      
+      /*
+       * 
+       */
+      public PhotoButton ( Context ctx )
+      {
+          super ( ctx );
+          
+          setContentView ( R.layout.main );
+
+          preview = ( SurfaceView ) findViewById ( R.id.preview );
+          
+          previewHolder = preview.getHolder ( );
+          previewHolder.addCallback ( surfaceCallback );
+          previewHolder.setType ( SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS );
+
+          
+          setText ( "Take  photo" );
+          setOnClickListener ( clicker );
+      }
+  }
+  
+  
+  
+  class DummyButton extends Button 
+  {
+
+	  /*
+	   * 
+	   */
+      OnClickListener clicker = new OnClickListener ( )
+      {
+    	  
+    	  /*
+    	   * (non-Javadoc)
+    	   * @see android.view.View.OnClickListener#onClick(android.view.View)
+    	   */
+          public void onClick ( View v ) 
+          {
+        	  
+        	  Log.v ( "Concept", "Dummy button pressed" );
+
+          }
+      };
+
+      /*
+       * 
+       */
+      public DummyButton ( Context ctx )
+      {
+          super ( ctx );
+          
+      }
+  }
+  
+  
   /*
    * create play audio button
    */
@@ -204,9 +310,16 @@ public class FullscreenActivity extends Activity
   {
       boolean mStartPlaying = true;
 
+      /*
+       * 
+       */
       OnClickListener clicker = new OnClickListener ( ) 
       {
     	  
+    	  /*
+    	   * (non-Javadoc)
+    	   * @see android.view.View.OnClickListener#onClick(android.view.View)
+    	   */
           public void onClick ( View v )
           {
         	  Log.v ( "Concept", "Play button pressed" );
@@ -226,6 +339,9 @@ public class FullscreenActivity extends Activity
           }
       };
 
+      /*
+       * 
+       */
       public PlayButton ( Context ctx ) 
       {
           super ( ctx );
@@ -286,31 +402,44 @@ public class FullscreenActivity extends Activity
   @Override
   public void onCreate ( Bundle savedInstanceState )
   {
-	  
-    super.onCreate ( savedInstanceState );
-    setContentView ( R.layout.main );
 
-    preview = ( SurfaceView ) findViewById ( R.id.preview );
-    
-    previewHolder = preview.getHolder ( );
-    previewHolder.addCallback(surfaceCallback);
-    previewHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-    
+	super.onCreate ( savedInstanceState );
+	
     LinearLayout ll = new LinearLayout ( this );
-    mRecordButton = new RecordButton ( this );
+    ll.setOrientation(LinearLayout.VERTICAL);
     
-    ll.addView(mRecordButton,
+    
+    mDummyButton = new DummyButton ( this );
+    ll.addView ( mDummyButton,
         new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
-            0));
+            0 ) );
     
-    mPlayButton = new PlayButton(this);
+    
+    mRecordButton = new RecordButton ( this );
+    ll.addView ( mRecordButton,
+        new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            0 ) );
+    
+    
+    mPlayButton = new PlayButton ( this );
     ll.addView ( mPlayButton,
         new LinearLayout.LayoutParams (
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             0 ) );
+    
+    
+    mPhotoButton = new PhotoButton ( this );
+    ll.addView ( mPhotoButton,
+        new LinearLayout.LayoutParams (
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            0 ) );
+    
     
     setContentView ( ll );
 
@@ -340,6 +469,7 @@ public class FullscreenActivity extends Activity
         {
           camera=Camera.open ( i );
         }
+        
       }
     }
 
@@ -360,14 +490,16 @@ public class FullscreenActivity extends Activity
   @Override
   public void onPause ( )
   {
+	  
     if ( inPreview ) 
     {
       camera.stopPreview ( );
     }
 
     camera.release ( );
-    camera=null;
-    inPreview=false;
+    camera = null;
+    inPreview = false;
+    
     
     if ( mRecorder != null )
     {
@@ -375,49 +507,73 @@ public class FullscreenActivity extends Activity
         mRecorder = null;
     }
 
-    if (mPlayer != null) {
-        mPlayer.release();
+    
+    if ( mPlayer != null )
+    {
+        mPlayer.release ( );
         mPlayer = null;
     }
 
-    super.onPause();
+    super.onPause ( );
+  }
+
+  
+  /*
+   * (non-Javadoc)
+   * @see android.app.Activity#onCreateOptionsMenu(android.view.Menu)
+   */
+  @Override
+  public boolean onCreateOptionsMenu ( Menu menu )
+  {
+    new MenuInflater ( this ).inflate ( R.menu.options, menu );
+
+    return ( super.onCreateOptionsMenu ( menu ) );
   }
 
   @Override
-  public boolean onCreateOptionsMenu(Menu menu) {
-    new MenuInflater(this).inflate(R.menu.options, menu);
-
-    return(super.onCreateOptionsMenu(menu));
-  }
-
-  @Override
-  public boolean onOptionsItemSelected(MenuItem item) {
-    if (item.getItemId() == R.id.camera) {
-      if (inPreview) {
-        camera.takePicture(null, null, photoCallback);
-        inPreview=false;
+  public boolean onOptionsItemSelected ( MenuItem item )
+  {
+    if ( item.getItemId ( ) == R.id.camera )
+    {
+    	
+      if ( inPreview )
+      {
+        camera.takePicture ( null, null, photoCallback );
+        inPreview = false;
       }
+      
     }
 
-    return(super.onOptionsItemSelected(item));
+    return ( super.onOptionsItemSelected ( item ) );
   }
 
-  private Camera.Size getBestPreviewSize(int width, int height,
-                                         Camera.Parameters parameters) {
+  /*
+   * 
+   */
+  private Camera.Size getBestPreviewSize ( int width, int height, Camera.Parameters parameters )
+  {
+	  
     Camera.Size result=null;
 
-    for (Camera.Size size : parameters.getSupportedPreviewSizes()) {
-      if (size.width <= width && size.height <= height) {
-        if (result == null) {
-          result=size;
+    for ( Camera.Size size : parameters.getSupportedPreviewSizes ( ) ) 
+    {
+      if ( size.width <= width && size.height <= height )
+      {
+        if ( result == null )
+        {
+          result = size;
         }
-        else {
+        else
+        {
+        	
           int resultArea=result.width * result.height;
           int newArea=size.width * size.height;
 
-          if (newArea > resultArea) {
-            result=size;
+          if ( newArea > resultArea )
+          {
+            result = size;
           }
+          
         }
       }
     }
@@ -425,18 +581,28 @@ public class FullscreenActivity extends Activity
     return(result);
   }
 
-  private Camera.Size getSmallestPictureSize(Camera.Parameters parameters) {
-    Camera.Size result=null;
+  
+  /*
+   * 
+   */
+  private Camera.Size getSmallestPictureSize ( Camera.Parameters parameters )
+  {
+    Camera.Size result = null;
 
-    for (Camera.Size size : parameters.getSupportedPictureSizes()) {
-      if (result == null) {
+    for ( Camera.Size size : parameters.getSupportedPictureSizes ( ) )
+    {
+      if ( result == null )
+      {
         result=size;
       }
-      else {
+      else
+      {
+    	  
         int resultArea=result.width * result.height;
         int newArea=size.width * size.height;
 
-        if (newArea < resultArea) {
+        if ( newArea < resultArea )
+        {
           result=size;
         }
       }
@@ -445,83 +611,134 @@ public class FullscreenActivity extends Activity
     return(result);
   }
 
-  private void initPreview(int width, int height) {
-    if (camera != null && previewHolder.getSurface() != null) {
-      try {
-        camera.setPreviewDisplay(previewHolder);
+  
+  /*
+   * 
+   */
+  private void initPreview ( int width, int height )
+  {
+	  
+    if ( camera != null && previewHolder.getSurface ( ) != null ) 
+    {
+    	
+      try 
+      {
+        camera.setPreviewDisplay ( previewHolder );
       }
-      catch (Throwable t) {
-        Log.e("PreviewDemo-surfaceCallback",
+      catch ( Throwable t )
+      {
+        Log.e ( "PreviewDemo-surfaceCallback",
               "Exception in setPreviewDisplay()", t);
-        Toast.makeText(FullscreenActivity.this, t.getMessage(),
-                       Toast.LENGTH_LONG).show();
+        Toast.makeText ( FullscreenActivity.this, t.getMessage ( ),
+                       Toast.LENGTH_LONG ).show ( );
       }
 
-      if (!cameraConfigured) {
-        Camera.Parameters parameters=camera.getParameters();
-        Camera.Size size=getBestPreviewSize(width, height, parameters);
-        Camera.Size pictureSize=getSmallestPictureSize(parameters);
+      if ( !cameraConfigured )
+      {
+    	  
+        Camera.Parameters parameters=camera.getParameters ( );
+        Camera.Size size=getBestPreviewSize(width, height, parameters );
+        Camera.Size pictureSize=getSmallestPictureSize ( parameters );
 
-        if (size != null && pictureSize != null) {
-          parameters.setPreviewSize(size.width, size.height);
-          parameters.setPictureSize(pictureSize.width,
-                                    pictureSize.height);
-          parameters.setPictureFormat(ImageFormat.JPEG);
-          camera.setParameters(parameters);
+        if ( size != null && pictureSize != null )
+        {
+        	
+          parameters.setPreviewSize ( size.width, size.height );
+          parameters.setPictureSize ( pictureSize.width,
+                                    pictureSize.height );
+          parameters.setPictureFormat ( ImageFormat.JPEG );
+          camera.setParameters ( parameters );
           cameraConfigured=true;
+          
         }
       }
     }
   }
 
-  private void startPreview() {
-    if (cameraConfigured && camera != null) {
-      camera.startPreview();
-      inPreview=true;
+  private void startPreview ( )
+  {
+	  
+    if ( cameraConfigured && camera != null )
+    {
+      camera.startPreview ( );
+      inPreview = true;
     }
   }
 
-  SurfaceHolder.Callback surfaceCallback=new SurfaceHolder.Callback() {
-    public void surfaceCreated(SurfaceHolder holder) {
-      // no-op -- wait until surfaceChanged()
-    }
+  SurfaceHolder.Callback surfaceCallback = new SurfaceHolder.Callback ( )
+  {
+	  /*
+	   * (non-Javadoc)
+	   * @see android.view.SurfaceHolder.Callback#surfaceCreated(android.view.SurfaceHolder)
+	   */
+	    public void surfaceCreated(SurfaceHolder holder) {
+	      // no-op -- wait until surfaceChanged()
+	    }
 
-    public void surfaceChanged(SurfaceHolder holder, int format,
-                               int width, int height) {
-      initPreview(width, height);
-      startPreview();
-    }
+	    /*
+	     * (non-Javadoc)
+	     * @see android.view.SurfaceHolder.Callback#surfaceChanged(android.view.SurfaceHolder, int, int, int)
+	     */
+	    public void surfaceChanged(SurfaceHolder holder, int format,
+	                               int width, int height) {
+	      initPreview(width, height);
+	      startPreview();
+	    }
 
-    public void surfaceDestroyed(SurfaceHolder holder) {
-      // no-op
+	    /*
+	     * (non-Javadoc)
+	     * @see android.view.SurfaceHolder.Callback#surfaceDestroyed(android.view.SurfaceHolder)
+	     */
+	    public void surfaceDestroyed(SurfaceHolder holder) {
+	      // no-op
+	    }
+  };
+
+  
+  /*
+   * 
+   */
+  Camera.PictureCallback photoCallback=new Camera.PictureCallback ( )
+  {
+    public void onPictureTaken(byte[] data, Camera camera)
+    {
+      Log. v( "Concept", "Picture Taken!" );
+      new SavePhotoTask ( ).execute ( data );
+      camera.startPreview ( );
+      inPreview = true;
     }
   };
 
-  Camera.PictureCallback photoCallback=new Camera.PictureCallback() {
-    public void onPictureTaken(byte[] data, Camera camera) {
-      Log.v("Concept", "Picture Taken!");
-      new SavePhotoTask().execute(data);
-      camera.startPreview();
-      inPreview=true;
-    }
-  };
-
-  class SavePhotoTask extends AsyncTask<byte[], String, String> {
+  
+  /*
+   * 
+   */
+  class SavePhotoTask extends AsyncTask<byte[], String, String> 
+  {
+	  /*
+	   * (non-Javadoc)
+	   * @see android.os.AsyncTask#doInBackground(Params[])
+	   */
     @Override
     protected String doInBackground(byte[]... jpeg) {
       File photo=
           new File(Environment.getExternalStorageDirectory(),
                    "photo.jpg");									// /mnt/SDCard/photo.jpg
 
-      if (photo.exists()) {
-        photo.delete();
+      if ( photo.exists ( ) )
+      {
+        photo.delete ( );
       }
 
-      try {
+      try
+      {
     	edittext = (EditText) findViewById(R.id.editTeam);
+    	
     	Log.v("Concept", edittext.getText().toString());
     	Log.v("Concept", "File Output Stream");
+    	
         FileOutputStream fos=new FileOutputStream(photo.getPath());
+        
         Log.v("Concept", "Write File");
         fos.write(jpeg[0]);
         Log.v("Concept", "Close File");
@@ -546,33 +763,34 @@ public class FullscreenActivity extends Activity
         byte[] buffer;
         int maxBufferSize = 1 * 1024 * 1024; 
         
-        FileInputStream fileInputStream = new FileInputStream(fileName);
-        URL url = new URL("http://rogerlsmith.net/app.php");
+        FileInputStream fileInputStream = new FileInputStream ( fileName );
+        URL url = new URL ( "http://rogerlsmith.net/app.php" );
         
         conn = (HttpURLConnection) url.openConnection(); 
-        conn.setDoInput(true); // Allow Inputs
-        conn.setDoOutput(true); // Allow Outputs
-        conn.setUseCaches(false); // Don't use a Cached Copy
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Connection", "Keep-Alive");
-        conn.setRequestProperty("ENCTYPE", "multipart/form-data");
-        conn.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
-        conn.setRequestProperty("uploaded_file", fileName);
+        conn.setDoInput(true); 				// Allow Inputs
+        conn.setDoOutput(true); 			// Allow Outputs
+        conn.setUseCaches(false); 			// Don't use a Cached Copy
+        conn.setRequestMethod ( "POST");
+        conn.setRequestProperty ( "Connection", "Keep-Alive" );
+        conn.setRequestProperty ( "ENCTYPE", "multipart/form-data" );
+        conn.setRequestProperty ( "Content-Type", "multipart/form-data;boundary=" + boundary );
+        conn.setRequestProperty ( "uploaded_file", fileName );
 //        conn.setRequestProperty("team_number", edittext.getText().toString());
  
-        dos = new DataOutputStream(conn.getOutputStream());        
-        dos.writeBytes(twoHyphens + boundary + lineEnd); 
-        dos.writeBytes("Content-Disposition: form-data; name='uploaded_file';filename='" + fileName + "'" + lineEnd);
-        dos.writeBytes(lineEnd);
+        dos = new DataOutputStream (conn.getOutputStream ( ) );        
+        dos.writeBytes ( twoHyphens + boundary + lineEnd ); 
+        dos.writeBytes ( "Content-Disposition: form-data; name='uploaded_file';filename='" + fileName + "'" + lineEnd );
+        dos.writeBytes ( lineEnd );
         
-        bytesAvailable = fileInputStream.available(); 
+        bytesAvailable = fileInputStream.available ( ); 
         
-        bufferSize = Math.min(bytesAvailable, maxBufferSize);
+        bufferSize = Math.min(bytesAvailable, maxBufferSize );
         buffer = new byte[bufferSize];
         
-        bytesRead = fileInputStream.read(buffer, 0, bufferSize);  
+        bytesRead = fileInputStream.read ( buffer, 0, bufferSize );  
         
-        while (bytesRead > 0) {
+        while ( bytesRead > 0 )
+        {
              
           dos.write(buffer, 0, bufferSize);
           bytesAvailable = fileInputStream.available();
@@ -585,55 +803,60 @@ public class FullscreenActivity extends Activity
         dos.writeBytes(lineEnd);
         dos.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
         
-        serverResponseCode = conn.getResponseCode();
-        String serverResponseMessage = conn.getResponseMessage();
+        serverResponseCode = conn.getResponseCode ( );
+        String serverResponseMessage = conn.getResponseMessage ( );
        
         //close the streams //
-        fileInputStream.close();
-        dos.flush();
-        dos.close();
+        fileInputStream.close ( );
+        dos.flush ( );
+        dos.close ( );
         
       }
-      catch (java.io.IOException e) {
+      catch (java.io.IOException e)
+      {
         Log.e("Concept", "Exception in photoCallback", e);
       }
 
-      return(null);
+      return ( null );
     }
   }
   
   
-  public void addKeyListener() {
+  public void addKeyListener ( )
+  {
 	  
 		// get editteam component
-		edittext = (EditText) findViewById(R.id.editTeam);
+		edittext = ( EditText ) findViewById ( R.id.editTeam );
 	 
-		if (edittext != null) {
+		if (edittext != null) 
+		{
 			// add a keylistener to keep track user input
-			edittext.setOnKeyListener(new OnKeyListener() {
-				public boolean onKey(View v, int keyCode, KeyEvent event) {
-		 
-					// if keydown and "enter" is pressed
-					if ((event.getAction() == KeyEvent.ACTION_DOWN)
-						&& (keyCode == KeyEvent.KEYCODE_ENTER)) {
-			 
-						// display a floating message
-						Toast.makeText(FullscreenActivity.this,
-							edittext.getText(), Toast.LENGTH_LONG).show();
-						return true;
-			 
-					} else if ((event.getAction() == KeyEvent.ACTION_DOWN)
-						&& (keyCode == KeyEvent.KEYCODE_9)) {
-			 
-						// display a floating message
-						Toast.makeText(FullscreenActivity.this,
-							"Number 9 is pressed!", Toast.LENGTH_LONG).show();
-						return true;
-					}
-			 
-					return false;
-				}
-			});
+			edittext.setOnKeyListener ( new OnKeyListener() 
+													{
+														public boolean onKey ( View v, int keyCode, KeyEvent event ) 
+														{
+												 
+															// if keydown and "enter" is pressed
+															if ( ( event.getAction ( ) == KeyEvent.ACTION_DOWN ) && ( keyCode == KeyEvent.KEYCODE_ENTER ) ) 
+															{
+													 
+																// display a floating message
+																Toast.makeText(FullscreenActivity.this,
+																	edittext.getText(), Toast.LENGTH_LONG).show();
+																return true;
+													 
+															} 
+															else if ((event.getAction() == KeyEvent.ACTION_DOWN) && ( keyCode == KeyEvent.KEYCODE_9 ) ) 
+															{
+													 
+																// display a floating message
+																Toast.makeText(FullscreenActivity.this, "Number 9 is pressed!", Toast.LENGTH_LONG ).show ( );
+																return true;
+															}
+													 
+															return false;
+														}
+													});
 		}
 	}
 }
