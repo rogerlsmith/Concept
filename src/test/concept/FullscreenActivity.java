@@ -254,7 +254,7 @@ public class FullscreenActivity extends Activity
       public PhotoButton ( Context ctx )
       {
           super ( ctx );
-          
+/*          
           setContentView ( R.layout.main );
 
           preview = ( SurfaceView ) findViewById ( R.id.preview );
@@ -262,7 +262,7 @@ public class FullscreenActivity extends Activity
           previewHolder = preview.getHolder ( );
           previewHolder.addCallback ( surfaceCallback );
           previewHolder.setType ( SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS );
-
+*/
           
           setText ( "Take  photo" );
           setOnClickListener ( clicker );
@@ -359,41 +359,7 @@ public class FullscreenActivity extends Activity
       mFileName += "/audiorecordtest.3gp";
   }
 
-  /*  
-  @Override
-  public void onCreate(Bundle icicle) {
-      super.onCreate(icicle);
 
-      LinearLayout ll = new LinearLayout(this);
-      mRecordButton = new RecordButton(this);
-      ll.addView(mRecordButton,
-          new LinearLayout.LayoutParams(
-              ViewGroup.LayoutParams.WRAP_CONTENT,
-              ViewGroup.LayoutParams.WRAP_CONTENT,
-              0));
-      mPlayButton = new PlayButton(this);
-      ll.addView(mPlayButton,
-          new LinearLayout.LayoutParams(
-              ViewGroup.LayoutParams.WRAP_CONTENT,
-              ViewGroup.LayoutParams.WRAP_CONTENT,
-              0));
-      setContentView(ll);
-  }
-
-  @Override
-  public void onPause() {
-      super.onPause();
-      if (mRecorder != null) {
-          mRecorder.release();
-          mRecorder = null;
-      }
-
-      if (mPlayer != null) {
-          mPlayer.release();
-          mPlayer = null;
-      }
-  }
-*/
   
   /*
    * (non-Javadoc)
@@ -408,6 +374,7 @@ public class FullscreenActivity extends Activity
     LinearLayout ll = new LinearLayout ( this );
     ll.setOrientation(LinearLayout.VERTICAL);
     
+ 
     
     mDummyButton = new DummyButton ( this );
     ll.addView ( mDummyButton,
@@ -424,7 +391,7 @@ public class FullscreenActivity extends Activity
             ViewGroup.LayoutParams.WRAP_CONTENT,
             0 ) );
     
-    
+    Log.v ( "Concept", "create play button" );
     mPlayButton = new PlayButton ( this );
     ll.addView ( mPlayButton,
         new LinearLayout.LayoutParams (
@@ -432,7 +399,8 @@ public class FullscreenActivity extends Activity
             ViewGroup.LayoutParams.WRAP_CONTENT,
             0 ) );
     
-    
+   
+    Log.v ( "Concept", "create photo button" );
     mPhotoButton = new PhotoButton ( this );
     ll.addView ( mPhotoButton,
         new LinearLayout.LayoutParams (
@@ -513,10 +481,23 @@ public class FullscreenActivity extends Activity
         mPlayer.release ( );
         mPlayer = null;
     }
+    
+    if (mRecorder != null) 
+    {
+        mRecorder.release  ();
+        mRecorder = null;
+    }
+
+    if (mPlayer != null) 
+    {
+        mPlayer.release ( );
+        mPlayer = null;
+    }
 
     super.onPause ( );
   }
 
+  
   
   /*
    * (non-Javadoc)
@@ -530,6 +511,11 @@ public class FullscreenActivity extends Activity
     return ( super.onCreateOptionsMenu ( menu ) );
   }
 
+  
+  /*
+   * (non-Javadoc)
+   * @see android.app.Activity#onOptionsItemSelected(android.view.MenuItem)
+   */
   @Override
   public boolean onOptionsItemSelected ( MenuItem item )
   {
@@ -547,6 +533,8 @@ public class FullscreenActivity extends Activity
     return ( super.onOptionsItemSelected ( item ) );
   }
 
+  
+  
   /*
    * 
    */
@@ -702,7 +690,7 @@ public class FullscreenActivity extends Activity
   {
     public void onPictureTaken(byte[] data, Camera camera)
     {
-      Log. v( "Concept", "Picture Taken!" );
+      Log. v ( "Concept", "Picture Taken!" );
       new SavePhotoTask ( ).execute ( data );
       camera.startPreview ( );
       inPreview = true;
@@ -715,6 +703,7 @@ public class FullscreenActivity extends Activity
    */
   class SavePhotoTask extends AsyncTask<byte[], String, String> 
   {
+	  
 	  /*
 	   * (non-Javadoc)
 	   * @see android.os.AsyncTask#doInBackground(Params[])
@@ -734,7 +723,7 @@ public class FullscreenActivity extends Activity
       {
     	edittext = (EditText) findViewById(R.id.editTeam);
     	
-    	Log.v("Concept", edittext.getText().toString());
+    	Log.v ( "Concept", edittext.getText ( ).toString ( ) );
     	Log.v("Concept", "File Output Stream");
     	
         FileOutputStream fos=new FileOutputStream(photo.getPath());
@@ -767,9 +756,9 @@ public class FullscreenActivity extends Activity
         URL url = new URL ( "http://rogerlsmith.net/app.php" );
         
         conn = (HttpURLConnection) url.openConnection(); 
-        conn.setDoInput(true); 				// Allow Inputs
-        conn.setDoOutput(true); 			// Allow Outputs
-        conn.setUseCaches(false); 			// Don't use a Cached Copy
+        conn.setDoInput ( true ); 				// Allow Inputs
+        conn.setDoOutput ( true ); 				// Allow Outputs
+        conn.setUseCaches ( false ); 			// Don't use a Cached Copy
         conn.setRequestMethod ( "POST");
         conn.setRequestProperty ( "Connection", "Keep-Alive" );
         conn.setRequestProperty ( "ENCTYPE", "multipart/form-data" );
@@ -800,8 +789,8 @@ public class FullscreenActivity extends Activity
         }
 
         // send multipart form data necessary after file data...
-        dos.writeBytes(lineEnd);
-        dos.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+        dos.writeBytes ( lineEnd );
+        dos.writeBytes ( twoHyphens + boundary + twoHyphens + lineEnd );
         
         serverResponseCode = conn.getResponseCode ( );
         String serverResponseMessage = conn.getResponseMessage ( );
