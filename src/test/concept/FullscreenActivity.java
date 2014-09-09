@@ -53,7 +53,7 @@ public class FullscreenActivity extends Activity
   private EditText 			edittext;
   
   private static final String LOG_TAG = "AudioRecordTest";
-  private static String 	mFileName			= null;
+  private static String 	mFileName			= "/recordtest.3gp";;
 
   private RecordButton 		mRecordButton		= null;
   private MediaRecorder 	mRecorder 			= null;
@@ -73,10 +73,12 @@ public class FullscreenActivity extends Activity
   {
       if ( start ) 
       {
+    	  Log.v ( "Concept", "start recording in onRecord" );
           startRecording ( );
       }
       else
       {
+    	  Log.v ( "Concept", "stop recording in onRecord" );
           stopRecording ( );
       }
   }
@@ -90,10 +92,12 @@ public class FullscreenActivity extends Activity
   {
       if ( start ) 
       {
+    	  Log.v ( "Concept", "start playing in onPlay" );
           startPlaying ( );
       }
       else
       {
+    	  Log.v ( "Concept", "stop playing in onPlay" );
           stopPlaying ( );
       }
   }
@@ -134,6 +138,7 @@ public class FullscreenActivity extends Activity
    */
   private void startRecording ( ) 
   {
+	  Log.v ( "Concept", "create new media recorder in startRecording" );
       mRecorder = new MediaRecorder ( );
       mRecorder.setAudioSource ( MediaRecorder.AudioSource.MIC );
       mRecorder.setOutputFormat ( MediaRecorder.OutputFormat.THREE_GPP );
@@ -142,6 +147,7 @@ public class FullscreenActivity extends Activity
 
       try 
       {
+    	  Log.v ( "Concept", "mRecorder.prepare() in startRecording" );
           mRecorder.prepare ( );
       } 
       catch ( IOException e ) 
@@ -149,6 +155,7 @@ public class FullscreenActivity extends Activity
           Log.e ( LOG_TAG, "prepare() failed" );
       }
 
+      Log.v ( "Concept", "mRecorder.start()" );
       mRecorder.start();
   }
 
@@ -235,7 +242,15 @@ public class FullscreenActivity extends Activity
               
               if ( mCameraOpen ) 
               {
-                  setText ( "Stop recording" );
+            	   
+                  setContentView ( R.layout.main );
+
+                  preview = ( SurfaceView ) findViewById ( R.id.preview );
+                  
+                  previewHolder = preview.getHolder ( );
+                  previewHolder.addCallback ( surfaceCallback );
+                  previewHolder.setType ( SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS );
+        
               } 
               else 
               {
@@ -254,15 +269,6 @@ public class FullscreenActivity extends Activity
       public PhotoButton ( Context ctx )
       {
           super ( ctx );
-/*          
-          setContentView ( R.layout.main );
-
-          preview = ( SurfaceView ) findViewById ( R.id.preview );
-          
-          previewHolder = preview.getHolder ( );
-          previewHolder.addCallback ( surfaceCallback );
-          previewHolder.setType ( SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS );
-*/
           
           setText ( "Take  photo" );
           setOnClickListener ( clicker );
