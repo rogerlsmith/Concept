@@ -2,6 +2,7 @@ package test.concept;
 
 
 import java.io.File;
+
 import java.io.FileOutputStream;
 
 import android.app.Activity;
@@ -53,7 +54,7 @@ public class FullscreenActivity extends Activity
   private EditText 			edittext;
   
   private static final String LOG_TAG = "AudioRecordTest";
-  private static String 	mFileName			= "/recordtest.3gp";;
+  private static String 	mFileName			= "recordtest.3gp";;
 
   private RecordButton 		mRecordButton		= null;
   private MediaRecorder 	mRecorder 			= null;
@@ -140,10 +141,12 @@ public class FullscreenActivity extends Activity
   {
 	  Log.v ( "Concept", "create new media recorder in startRecording" );
       mRecorder = new MediaRecorder ( );
+      mRecorder.reset ( );
       mRecorder.setAudioSource ( MediaRecorder.AudioSource.MIC );
       mRecorder.setOutputFormat ( MediaRecorder.OutputFormat.THREE_GPP );
+      mFileName = sanitizePath  ( mFileName );
       mRecorder.setOutputFile ( mFileName );
-      mRecorder.setAudioEncoder ( MediaRecorder.AudioEncoder.AMR_NB );
+      mRecorder.setAudioEncoder ( MediaRecorder.AudioEncoder.DEFAULT );
 
       try 
       {
@@ -161,13 +164,113 @@ public class FullscreenActivity extends Activity
 
   
   /*
+   * Make sure path to audio file is valid
+   */
+  private String sanitizePath ( String path )
+  {
+	  
+		if ( !path.startsWith ( "/" ) ) 
+		{
+		  path = "/" + path;
+		}
+		
+		if ( !path.contains ( "." ) )
+		{
+		  path += ".3gp";
+		}
+		
+		return Environment.getExternalStorageDirectory ( ).getAbsolutePath ( ) + path;
+  }
+  
+  
+  
+  /*
    * stop recording audio
    */
   private void stopRecording ( )
   {
+	  
       mRecorder.stop ( );
       mRecorder.release ( );
       mRecorder = null;
+      
+      // upload file to server
+      
+      try
+      {
+
+        
+        /**********  File Path *************/
+
+        String sourceFileUri = mFileName;
+        String fileName = sourceFileUri;
+        
+        HttpURLConnection conn = null;
+        DataOutputStream dos = null;  
+        String lineEnd = "\r\n";
+        String twoHyphens = "--";
+        String boundary = "*****";
+        
+        int bytesRead, bytesAvailable, bufferSize;
+        
+        int serverResponseCode = 0;
+        byte[] buffer;
+        int maxBufferSize = 1 * 1024 * 1024; 
+        
+        FileInputStream fileInputStream = new FileInputStream ( fileName );
+        URL url = new URL ( "http://rogerlsmith.net/app.php" );
+        
+        conn = (HttpURLConnection) url.openConnection(); 
+        conn.setDoInput ( true ); 				// Allow Inputs
+        conn.setDoOutput ( true ); 				// Allow Outputs
+        conn.setUseCaches ( false ); 			// Don't use a Cached Copy
+        conn.setRequestMethod ( "POST");
+        conn.setRequestProperty ( "Connection", "Keep-Alive" );
+        conn.setRequestProperty ( "ENCTYPE", "multipart/form-data" );
+        conn.setRequestProperty ( "Content-Type", "multipart/form-data;boundary=" + boundary );
+        conn.setRequestProperty ( "uploaded_file", fileName );
+//        conn.setRequestProperty("team_number", edittext.getText().toString());
+ 
+        dos = new DataOutputStream (conn.getOutputStream ( ) );        
+        dos.writeBytes ( twoHyphens + boundary + lineEnd ); 
+        dos.writeBytes ( "Content-Disposition: form-data; name='uploaded_file';filename='" + fileName + "'" + lineEnd );
+        dos.writeBytes ( lineEnd );
+        
+        bytesAvailable = fileInputStream.available ( ); 
+        
+        bufferSize = Math.min(bytesAvailable, maxBufferSize );
+        buffer = new byte[bufferSize];
+        
+        bytesRead = fileInputStream.read ( buffer, 0, bufferSize );  
+        
+        while ( bytesRead > 0 )
+        {
+             
+          dos.write(buffer, 0, bufferSize);
+          bytesAvailable = fileInputStream.available();
+          bufferSize = Math.min(bytesAvailable, maxBufferSize);
+          bytesRead = fileInputStream.read(buffer, 0, bufferSize);   
+           
+        }
+
+        // send multipart form data necessary after file data...
+        dos.writeBytes ( lineEnd );
+        dos.writeBytes ( twoHyphens + boundary + twoHyphens + lineEnd );
+        
+        serverResponseCode = conn.getResponseCode ( );
+        String serverResponseMessage = conn.getResponseMessage ( );
+       
+        //close the streams //
+        fileInputStream.close ( );
+        dos.flush ( );
+        dos.close ( );
+        
+      }
+      catch (java.io.IOException e)
+      {
+        Log.e("Concept", "Exception in photoCallback", e);
+      }
+
   }
 
   
@@ -705,7 +808,7 @@ public class FullscreenActivity extends Activity
 
   
   /*
-   * 
+   * Upload photo to server
    */
   class SavePhotoTask extends AsyncTask<byte[], String, String> 
   {
