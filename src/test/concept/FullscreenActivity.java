@@ -53,8 +53,8 @@ public class FullscreenActivity extends Activity
   private boolean 			cameraConfigured	= false;
   private EditText 			edittext;
   
-  private static final String LOG_TAG = "AudioRecordTest";
-  private static String 	mFileName			= "recordtest.3gp";;
+  private static final String LOG_TAG 			= "AudioRecordTest";
+  private static String 	mFileName			= "recordtest.mp4";;
 
   private RecordButton 		mRecordButton		= null;
   private MediaRecorder 	mRecorder 			= null;
@@ -143,7 +143,7 @@ public class FullscreenActivity extends Activity
       mRecorder = new MediaRecorder ( );
       mRecorder.reset ( );
       mRecorder.setAudioSource ( MediaRecorder.AudioSource.MIC );
-      mRecorder.setOutputFormat ( MediaRecorder.OutputFormat.THREE_GPP );
+      mRecorder.setOutputFormat ( MediaRecorder.OutputFormat.MPEG_4 );
       mFileName = sanitizePath  ( mFileName );
       mRecorder.setOutputFile ( mFileName );
       mRecorder.setAudioEncoder ( MediaRecorder.AudioEncoder.DEFAULT );
@@ -176,7 +176,7 @@ public class FullscreenActivity extends Activity
 		
 		if ( !path.contains ( "." ) )
 		{
-		  path += ".3gp";
+		  path += ".mp4";
 		}
 		
 		return Environment.getExternalStorageDirectory ( ).getAbsolutePath ( ) + path;
@@ -228,17 +228,16 @@ public class FullscreenActivity extends Activity
         conn.setRequestProperty ( "Connection", "Keep-Alive" );
         conn.setRequestProperty ( "ENCTYPE", "multipart/form-data" );
         conn.setRequestProperty ( "Content-Type", "multipart/form-data;boundary=" + boundary );
-        conn.setRequestProperty ( "uploaded_file", fileName );
-//        conn.setRequestProperty("team_number", edittext.getText().toString());
- 
-        dos = new DataOutputStream (conn.getOutputStream ( ) );        
+        conn.setRequestProperty ( "uploaded_file",  fileName );
+
+        dos = new DataOutputStream ( conn.getOutputStream ( ) );
         dos.writeBytes ( twoHyphens + boundary + lineEnd ); 
         dos.writeBytes ( "Content-Disposition: form-data; name='uploaded_file';filename='" + fileName + "'" + lineEnd );
         dos.writeBytes ( lineEnd );
         
         bytesAvailable = fileInputStream.available ( ); 
-        
-        bufferSize = Math.min(bytesAvailable, maxBufferSize );
+
+        bufferSize = Math.min ( bytesAvailable, maxBufferSize );
         buffer = new byte[bufferSize];
         
         bytesRead = fileInputStream.read ( buffer, 0, bufferSize );  
@@ -447,6 +446,8 @@ public class FullscreenActivity extends Activity
               
           }
       };
+      
+      
 
       /*
        * 
@@ -465,7 +466,7 @@ public class FullscreenActivity extends Activity
    */
   public void AudioRecordTest() {
       mFileName = Environment.getExternalStorageDirectory().getAbsolutePath();
-      mFileName += "/audiorecordtest.3gp";
+      mFileName += "/audiorecordtest.mp4";
   }
 
 
