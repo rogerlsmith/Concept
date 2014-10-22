@@ -871,7 +871,7 @@ public class FullscreenActivity extends Activity
 	        int maxBufferSize = 1 * 1024 * 1024; 
 	        
 	        FileInputStream fileInputStream = new FileInputStream ( fileName );
-	        URL url = new URL ( "http://rogerlsmith.net/app.php" );
+	        URL url = new URL ( "http://rogerlsmith.net/concept/add.php" );
 	        
 	        conn = (HttpURLConnection) url.openConnection(); 
 	        conn.setDoInput ( true ); 				// Allow Inputs
